@@ -41,7 +41,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:kenichi/use-camera.git"
+    "url": "git+ssh://git@github.com/kenichi/use-camera.git"
   },
   "license": "MIT"
 }
