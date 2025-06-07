@@ -10,7 +10,7 @@ npm install @poscam/use-camera
 
 ## Peer Dependencies
 
-- `react ^19.0.0`
+- `react ^18.0.0`
 - `phoenix ^1.7.0`
 
 ## Usage
@@ -22,7 +22,7 @@ function CameraComponent({ sessionId }: { sessionId: string }) {
   const {
     cameraState,
     qrCodeURL,
-    imageURL,
+    imageURLs,
     isLoading,
     error,
     initialize,
@@ -45,7 +45,9 @@ function CameraComponent({ sessionId }: { sessionId: string }) {
     <div>
       <p>Status: {cameraState}</p>
       {qrCodeURL && <img src={qrCodeURL} alt="QR Code" />}
-      {imageURL && <img src={imageURL} alt="Captured" />}
+      {imageURLs.map((url, index) => (
+        <img key={index} src={url} alt={`Captured ${index + 1}`} />
+      ))}
       <button onClick={retry}>Retry</button>
       <button onClick={disconnect}>Disconnect</button>
     </div>
@@ -77,7 +79,7 @@ interface CameraHookConfig {
 interface UseCameraReturn {
   cameraState: CameraState;
   qrCodeURL: string;
-  imageURL: string;
+  imageURLs: string[];
   isLoading: boolean;
   error: string | null;
   initialize: () => Promise<void>;

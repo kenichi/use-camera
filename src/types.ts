@@ -20,7 +20,7 @@ export interface CameraHookConfig {
 export interface UseCameraReturn {
   cameraState: CameraState;
   qrCodeURL: string;
-  imageURL: string;
+  imageURLs: string[];
   isLoading: boolean;
   error: string | null;
   initialize: () => Promise<void>;

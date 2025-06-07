@@ -68,7 +68,7 @@ describe("useCamera", () => {
 
     expect(result.current.cameraState).toBe(CameraState.WAITING);
     expect(result.current.qrCodeURL).toBe("");
-    expect(result.current.imageURL).toBe("");
+    expect(result.current.imageURLs).toEqual([]);
     expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBe(null);
     expect(typeof result.current.initialize).toBe("function");
@@ -261,5 +261,133 @@ describe("useCamera", () => {
     renderHook(() => useCamera(""));
 
     expect(window.fetch).not.toHaveBeenCalled();
+  });
+
+  it("should accumulate imageURLs when multiple image_url events are received", async () => {
+    const mockResponse = {
+      camera: {
+        code: "ABC123",
+        qrcode_url: "http://localhost:4000/images/qr/ABC123.png",
+        state: CameraState.WAITING,
+      },
+    };
+
+    (window.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue(mockResponse),
+    });
+
+    const { result } = renderHook(() => useCamera("test-session"));
+
+    await act(async () => {
+      await result.current.initialize();
+    });
+
+    expect(result.current.imageURLs).toEqual([]);
+
+    // Simulate multiple image_url events
+    const imageUrlCallback = mockChannel.on.mock.calls.find(
+      call => call[0] === "image_url"
+    )?.[1];
+
+    act(() => {
+      imageUrlCallback?.({ url: "http://example.com/image1.jpg" });
+    });
+
+    expect(result.current.imageURLs).toEqual([
+      expect.stringContaining("http://example.com/image1.jpg#"),
+    ]);
+
+    act(() => {
+      imageUrlCallback?.({ url: "http://example.com/image2.jpg" });
+    });
+
+    expect(result.current.imageURLs).toEqual([
+      expect.stringContaining("http://example.com/image1.jpg#"),
+      expect.stringContaining("http://example.com/image2.jpg#"),
+    ]);
+  });
+
+  it("should clear imageURLs when camera state changes to CLOSED", async () => {
+    const mockResponse = {
+      camera: {
+        code: "ABC123",
+        qrcode_url: "http://localhost:4000/images/qr/ABC123.png",
+        state: CameraState.WAITING,
+      },
+    };
+
+    (window.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue(mockResponse),
+    });
+
+    const { result } = renderHook(() => useCamera("test-session"));
+
+    await act(async () => {
+      await result.current.initialize();
+    });
+
+    // Add some images
+    const imageUrlCallback = mockChannel.on.mock.calls.find(
+      call => call[0] === "image_url"
+    )?.[1];
+
+    act(() => {
+      imageUrlCallback?.({ url: "http://example.com/image1.jpg" });
+      imageUrlCallback?.({ url: "http://example.com/image2.jpg" });
+    });
+
+    expect(result.current.imageURLs).toHaveLength(2);
+
+    // Simulate state change to CLOSED
+    const stateCallback = mockChannel.on.mock.calls.find(
+      call => call[0] === "state"
+    )?.[1];
+
+    act(() => {
+      stateCallback?.({ state: CameraState.CLOSED });
+    });
+
+    expect(result.current.imageURLs).toEqual([]);
+  });
+
+  it("should clear imageURLs on initialize for new session", async () => {
+    const mockResponse = {
+      camera: {
+        code: "ABC123",
+        qrcode_url: "http://localhost:4000/images/qr/ABC123.png",
+        state: CameraState.WAITING,
+      },
+    };
+
+    (window.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue(mockResponse),
+    });
+
+    const { result } = renderHook(() => useCamera("test-session"));
+
+    await act(async () => {
+      await result.current.initialize();
+    });
+
+    // Add some images
+    const imageUrlCallback = mockChannel.on.mock.calls.find(
+      call => call[0] === "image_url"
+    )?.[1];
+
+    act(() => {
+      imageUrlCallback?.({ url: "http://example.com/image1.jpg" });
+    });
+
+    expect(result.current.imageURLs).toHaveLength(1);
+
+    // Re-initialize (new session)
+    await act(async () => {
+      await result.current.initialize();
+    });
+
+    expect(result.current.imageURLs).toEqual([]);
   });
 });
