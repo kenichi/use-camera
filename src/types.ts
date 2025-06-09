@@ -26,4 +26,5 @@ export interface UseCameraReturn {
   initialize: () => Promise<void>;
   disconnect: () => void;
   retry: () => Promise<void>;
+  takePicture: () => void;
 }

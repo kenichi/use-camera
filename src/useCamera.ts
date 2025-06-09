@@ -54,7 +54,10 @@ export function useCamera(
         .receive("ok", (_resp) => {
           channel.on("state", (payload) => setCameraState(payload.state));
           channel.on("image_url", (payload) =>
-            setImageURLs(prev => [...prev, payload.url + "#" + new Date().getTime()]),
+            setImageURLs((prev) => [
+              ...prev,
+              payload.url + "#" + new Date().getTime(),
+            ]),
           );
         })
         .receive("error", (resp) => {
@@ -101,6 +104,12 @@ export function useCamera(
     await initialize();
   }, [disconnect, initialize]);
 
+  const takePicture = useCallback((): void => {
+    if (channelRef.current && cameraState === CameraState.CONNECTED) {
+      channelRef.current.push("take_picture", {});
+    }
+  }, [cameraState]);
+
   useEffect(() => {
     if (cameraState === CameraState.CLOSED) {
       setImageURLs([]);
@@ -119,5 +128,6 @@ export function useCamera(
     initialize,
     disconnect,
     retry,
+    takePicture,
   };
 }

@@ -28,6 +28,7 @@ function CameraComponent({ sessionId }: { sessionId: string }) {
     initialize,
     disconnect,
     retry,
+    takePicture,
   } = useCamera(sessionId, {
     host: "your-app.com",
     useHttps: true,
@@ -50,6 +51,9 @@ function CameraComponent({ sessionId }: { sessionId: string }) {
       ))}
       <button onClick={retry}>Retry</button>
       <button onClick={disconnect}>Disconnect</button>
+      {cameraState === CameraState.CONNECTED && (
+        <button onClick={takePicture}>Take Picture</button>
+      )}
     </div>
   );
 }
@@ -85,6 +89,7 @@ interface UseCameraReturn {
   initialize: () => Promise<void>;
   disconnect: () => void;
   retry: () => Promise<void>;
+  takePicture: () => void;
 }
 ```
 
@@ -97,6 +102,37 @@ enum CameraState {
   CLOSED = "closed",
 }
 ```
+
+### Functions
+
+#### `initialize()`
+Initializes the camera session and WebSocket connection. Creates a new camera with QR code and establishes real-time communication.
+
+#### `disconnect()`
+Manually disconnects the WebSocket connection and cleans up resources.
+
+#### `retry()`
+Disconnects and re-initializes the camera session. Useful for recovering from errors.
+
+#### `takePicture()`
+Triggers a picture capture command that is broadcast to all connected camera devices via WebSocket. This function:
+
+- Only works when `cameraState` is `CameraState.CONNECTED`
+- Sends a `'take_picture'` command through the WebSocket channel
+- The command is broadcast to all subscribed clients (camera interfaces)
+- Camera interfaces can listen for this command to trigger photo capture
+
+**Usage Example:**
+```typescript
+const { takePicture, cameraState } = useCamera(sessionId);
+
+// Check if camera is connected before taking picture
+if (cameraState === CameraState.CONNECTED) {
+  takePicture(); // Broadcasts take picture command
+}
+```
+
+**Note:** This function sends a command to trigger photo capture. The actual photo capturing and image processing happens on the camera device side (browser with camera access).
 
 ## License
 

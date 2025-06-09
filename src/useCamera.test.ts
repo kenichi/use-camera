@@ -6,6 +6,7 @@ import { CameraState } from "./types";
 const mockConnect = jest.fn();
 const mockDisconnect = jest.fn();
 const mockLeave = jest.fn();
+const mockChannelPush = jest.fn();
 let mockEndpoint: string | null;
 let mockOptions: any;
 let mockTopic: string | null;
@@ -23,6 +24,7 @@ const mockChannel = {
   join: jest.fn(() => mockPush),
   on: jest.fn(),
   leave: mockLeave,
+  push: mockChannelPush,
 };
 
 const mockChannelFn = jest.fn((topic) => {
@@ -287,7 +289,7 @@ describe("useCamera", () => {
 
     // Simulate multiple image_url events
     const imageUrlCallback = mockChannel.on.mock.calls.find(
-      call => call[0] === "image_url"
+      (call) => call[0] === "image_url",
     )?.[1];
 
     act(() => {
@@ -330,7 +332,7 @@ describe("useCamera", () => {
 
     // Add some images
     const imageUrlCallback = mockChannel.on.mock.calls.find(
-      call => call[0] === "image_url"
+      (call) => call[0] === "image_url",
     )?.[1];
 
     act(() => {
@@ -342,7 +344,7 @@ describe("useCamera", () => {
 
     // Simulate state change to CLOSED
     const stateCallback = mockChannel.on.mock.calls.find(
-      call => call[0] === "state"
+      (call) => call[0] === "state",
     )?.[1];
 
     act(() => {
@@ -374,7 +376,7 @@ describe("useCamera", () => {
 
     // Add some images
     const imageUrlCallback = mockChannel.on.mock.calls.find(
-      call => call[0] === "image_url"
+      (call) => call[0] === "image_url",
     )?.[1];
 
     act(() => {
@@ -389,5 +391,91 @@ describe("useCamera", () => {
     });
 
     expect(result.current.imageURLs).toEqual([]);
+  });
+
+  it("should include takePicture function in return object", () => {
+    const { result } = renderHook(() => useCamera("test-session"));
+
+    expect(typeof result.current.takePicture).toBe("function");
+  });
+
+  it("should send take_picture command when takePicture is called and camera is connected", async () => {
+    const mockResponse = {
+      camera: {
+        code: "ABC123",
+        qrcode_url: "http://localhost:4000/images/qr/ABC123.png",
+        state: CameraState.WAITING,
+      },
+    };
+
+    (window.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue(mockResponse),
+    });
+
+    const { result } = renderHook(() => useCamera("test-session"));
+
+    await act(async () => {
+      await result.current.initialize();
+    });
+
+    // Simulate camera state change to connected
+    const stateCallback = mockChannel.on.mock.calls.find(
+      (call) => call[0] === "state",
+    )?.[1];
+
+    act(() => {
+      stateCallback?.({ state: CameraState.CONNECTED });
+    });
+
+    expect(result.current.cameraState).toBe(CameraState.CONNECTED);
+
+    // Call takePicture
+    act(() => {
+      result.current.takePicture();
+    });
+
+    expect(mockChannelPush).toHaveBeenCalledWith("take_picture", {});
+  });
+
+  it("should not send take_picture command when camera is not connected", async () => {
+    const mockResponse = {
+      camera: {
+        code: "ABC123",
+        qrcode_url: "http://localhost:4000/images/qr/ABC123.png",
+        state: CameraState.WAITING,
+      },
+    };
+
+    (window.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue(mockResponse),
+    });
+
+    const { result } = renderHook(() => useCamera("test-session"));
+
+    await act(async () => {
+      await result.current.initialize();
+    });
+
+    expect(result.current.cameraState).toBe(CameraState.WAITING);
+
+    // Call takePicture while still waiting
+    act(() => {
+      result.current.takePicture();
+    });
+
+    expect(mockChannelPush).not.toHaveBeenCalled();
+  });
+
+  it("should not send take_picture command when channel is not available", () => {
+    const { result } = renderHook(() => useCamera("test-session"));
+
+    // Call takePicture without initializing
+    act(() => {
+      result.current.takePicture();
+    });
+
+    expect(mockChannelPush).not.toHaveBeenCalled();
   });
 });
