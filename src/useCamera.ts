@@ -20,6 +20,9 @@ export function useCamera(
   );
   const [qrCodeURL, setQrCodeURL] = useState("");
   const [imageURLs, setImageURLs] = useState<string[]>([]);
+  const [lastImageURL, setLastImageURL] = useState<string | undefined>(
+    undefined,
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,12 +56,10 @@ export function useCamera(
         .join()
         .receive("ok", (_resp) => {
           channel.on("state", (payload) => setCameraState(payload.state));
-          channel.on("image_url", (payload) =>
-            setImageURLs((prev) => [
-              ...prev,
-              payload.url + "#" + new Date().getTime(),
-            ]),
-          );
+          channel.on("image_url", (payload) => {
+            setImageURLs((prev) => [...prev, payload.url]);
+            setLastImageURL(payload.url);
+          });
         })
         .receive("error", (resp) => {
           console.error("channel error:", resp);
@@ -77,6 +78,7 @@ export function useCamera(
     setIsLoading(true);
     setError(null);
     setImageURLs([]);
+    setLastImageURL(undefined);
 
     try {
       const response = await fetchCamera();
@@ -112,7 +114,6 @@ export function useCamera(
 
   useEffect(() => {
     if (cameraState === CameraState.CLOSED) {
-      setImageURLs([]);
       if (socketRef.current) {
         disconnect();
       }
@@ -123,6 +124,7 @@ export function useCamera(
     cameraState,
     qrCodeURL,
     imageURLs,
+    lastImageURL,
     isLoading,
     error,
     initialize,

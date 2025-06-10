@@ -21,6 +21,7 @@ export interface UseCameraReturn {
   cameraState: CameraState;
   qrCodeURL: string;
   imageURLs: string[];
+  lastImageURL: string | undefined;
   isLoading: boolean;
   error: string | null;
   initialize: () => Promise<void>;
