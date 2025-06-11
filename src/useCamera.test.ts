@@ -66,7 +66,7 @@ describe("useCamera", () => {
   });
 
   it("should return initial state", () => {
-    const { result } = renderHook(() => useCamera("test-session", { authToken: "test-token" }));
+    const { result } = renderHook(() => useCamera({ sessionId: "test-session", authToken: "test-token" }));
 
     expect(result.current.cameraState).toBe(CameraState.WAITING);
     expect(result.current.qrCodeURL).toBe("");
@@ -93,7 +93,7 @@ describe("useCamera", () => {
       json: jest.fn().mockResolvedValue(mockResponse),
     });
 
-    const { result } = renderHook(() => useCamera("test-session", { authToken: "test-token" }));
+    const { result } = renderHook(() => useCamera({ sessionId: "test-session", authToken: "test-token" }));
 
     await act(async () => {
       await result.current.initialize();
@@ -140,7 +140,7 @@ describe("useCamera", () => {
     });
 
     const { result } = renderHook(() =>
-      useCamera("test-session", { host: "localhost:4000", useHttps: false }),
+      useCamera({ sessionId: "test-session", authToken: "test-token", host: "localhost:4000", useHttps: false }),
     );
 
     await act(async () => {
@@ -149,7 +149,14 @@ describe("useCamera", () => {
 
     expect(window.fetch).toHaveBeenCalledWith(
       "http://localhost:4000/api/cameras",
-      expect.any(Object),
+      {
+        body: JSON.stringify({ session_id: "test-session" }),
+        headers: { 
+          "content-type": "application/json",
+          "authorization": "Bearer test-token"
+        },
+        method: "POST",
+      },
     );
 
     expect(mockEndpoint).toBe("ws://localhost:4000/socket");
@@ -161,7 +168,7 @@ describe("useCamera", () => {
       statusText: "Not Found",
     });
 
-    const { result } = renderHook(() => useCamera("test-session", { authToken: "test-token" }));
+    const { result } = renderHook(() => useCamera({ sessionId: "test-session", authToken: "test-token" }));
 
     await act(async () => {
       await result.current.initialize();
@@ -174,7 +181,7 @@ describe("useCamera", () => {
   it("should handle network errors", async () => {
     (window.fetch as jest.Mock).mockRejectedValue(new Error("Network error"));
 
-    const { result } = renderHook(() => useCamera("test-session", { authToken: "test-token" }));
+    const { result } = renderHook(() => useCamera({ sessionId: "test-session", authToken: "test-token" }));
 
     await act(async () => {
       await result.current.initialize();
@@ -198,7 +205,7 @@ describe("useCamera", () => {
       json: jest.fn().mockResolvedValue(mockResponse),
     });
 
-    const { result } = renderHook(() => useCamera("test-session", { authToken: "test-token" }));
+    const { result } = renderHook(() => useCamera({ sessionId: "test-session", authToken: "test-token" }));
 
     await act(async () => {
       await result.current.initialize();
@@ -225,7 +232,7 @@ describe("useCamera", () => {
       json: jest.fn().mockResolvedValue(mockResponse),
     });
 
-    const { result } = renderHook(() => useCamera("test-session", { authToken: "test-token" }));
+    const { result } = renderHook(() => useCamera({ sessionId: "test-session", authToken: "test-token" }));
 
     await act(async () => {
       await result.current.initialize();
@@ -254,7 +261,7 @@ describe("useCamera", () => {
       json: jest.fn().mockResolvedValue(mockResponse),
     });
 
-    const { result } = renderHook(() => useCamera("test-session", { authToken: "test-token" }));
+    const { result } = renderHook(() => useCamera({ sessionId: "test-session", authToken: "test-token" }));
 
     await act(async () => {
       await result.current.initialize();
@@ -264,7 +271,7 @@ describe("useCamera", () => {
   });
 
   it("should not fetch when sessionId is empty", () => {
-    renderHook(() => useCamera("", { authToken: "test-token" }));
+    renderHook(() => useCamera({ sessionId: "", authToken: "test-token" }));
 
     expect(window.fetch).not.toHaveBeenCalled();
   });
@@ -283,7 +290,7 @@ describe("useCamera", () => {
       json: jest.fn().mockResolvedValue(mockResponse),
     });
 
-    const { result } = renderHook(() => useCamera("test-session", { authToken: "test-token" }));
+    const { result } = renderHook(() => useCamera({ sessionId: "test-session", authToken: "test-token" }));
 
     await act(async () => {
       await result.current.initialize();
@@ -328,7 +335,7 @@ describe("useCamera", () => {
       json: jest.fn().mockResolvedValue(mockResponse),
     });
 
-    const { result } = renderHook(() => useCamera("test-session", { authToken: "test-token" }));
+    const { result } = renderHook(() => useCamera({ sessionId: "test-session", authToken: "test-token" }));
 
     await act(async () => {
       await result.current.initialize();
@@ -360,7 +367,7 @@ describe("useCamera", () => {
 
 
   it("should include takePicture function in return object", () => {
-    const { result } = renderHook(() => useCamera("test-session", { authToken: "test-token" }));
+    const { result } = renderHook(() => useCamera({ sessionId: "test-session", authToken: "test-token" }));
 
     expect(typeof result.current.takePicture).toBe("function");
   });
@@ -379,7 +386,7 @@ describe("useCamera", () => {
       json: jest.fn().mockResolvedValue(mockResponse),
     });
 
-    const { result } = renderHook(() => useCamera("test-session", { authToken: "test-token" }));
+    const { result } = renderHook(() => useCamera({ sessionId: "test-session", authToken: "test-token" }));
 
     await act(async () => {
       await result.current.initialize();
@@ -418,7 +425,7 @@ describe("useCamera", () => {
       json: jest.fn().mockResolvedValue(mockResponse),
     });
 
-    const { result } = renderHook(() => useCamera("test-session", { authToken: "test-token" }));
+    const { result } = renderHook(() => useCamera({ sessionId: "test-session", authToken: "test-token" }));
 
     await act(async () => {
       await result.current.initialize();
@@ -435,7 +442,7 @@ describe("useCamera", () => {
   });
 
   it("should not send take_picture command when channel is not available", () => {
-    const { result } = renderHook(() => useCamera("test-session", { authToken: "test-token" }));
+    const { result } = renderHook(() => useCamera({ sessionId: "test-session", authToken: "test-token" }));
 
     // Call takePicture without initializing
     act(() => {
@@ -459,7 +466,7 @@ describe("useCamera", () => {
       json: jest.fn().mockResolvedValue(mockResponse),
     });
 
-    const { result } = renderHook(() => useCamera("test-session", { authToken: "test-token" }));
+    const { result } = renderHook(() => useCamera({ sessionId: "test-session", authToken: "test-token" }));
 
     await act(async () => {
       await result.current.initialize();
@@ -495,7 +502,7 @@ describe("useCamera", () => {
       json: jest.fn().mockResolvedValue(mockResponse),
     });
 
-    const { result } = renderHook(() => useCamera("test-session", { authToken: "test-token" }));
+    const { result } = renderHook(() => useCamera({ sessionId: "test-session", authToken: "test-token" }));
 
     await act(async () => {
       await result.current.initialize();
@@ -540,7 +547,7 @@ describe("useCamera", () => {
       json: jest.fn().mockResolvedValue(mockResponse),
     });
 
-    const { result } = renderHook(() => useCamera("test-session", { authToken: "test-token" }));
+    const { result } = renderHook(() => useCamera({ sessionId: "test-session", authToken: "test-token" }));
 
     await act(async () => {
       await result.current.initialize();
@@ -581,7 +588,7 @@ describe("useCamera", () => {
       json: jest.fn().mockResolvedValue(mockResponse),
     });
 
-    const { result } = renderHook(() => useCamera("test-session", { authToken: "test-token" }));
+    const { result } = renderHook(() => useCamera({ sessionId: "test-session", authToken: "test-token" }));
 
     await act(async () => {
       await result.current.initialize();

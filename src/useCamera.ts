@@ -3,15 +3,12 @@ import { Channel, Socket } from "phoenix";
 import {
   CameraState,
   CreateCameraResponse,
-  CameraHookConfig,
+  UseCameraOptions,
   UseCameraReturn,
 } from "./types";
 
-export function useCamera(
-  sessionId: string,
-  config: CameraHookConfig,
-): UseCameraReturn {
-  const { host = "poscam.shop", useHttps = true, authToken } = config;
+export function useCamera(options: UseCameraOptions): UseCameraReturn {
+  const { sessionId, authToken, host = "poscam.shop", useHttps = true } = options;
   const httpProtocol = useHttps ? "https" : "http";
   const wsProtocol = useHttps ? "wss" : "ws";
 

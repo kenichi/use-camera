@@ -13,23 +13,36 @@ npm install @poscam/use-camera
 - `react ^18.0.0`
 - `phoenix ^1.7.0`
 
+## Authentication
+
+Before using the camera hook, you need to obtain an API token from the PosCam application. API tokens can be created through the user settings page and are required for all API requests.
+
+```typescript
+// Example: Getting a token and using it with the hook
+const apiToken = "your-api-token-here"; // Obtained from PosCam user settings
+const sessionId = "unique-session-identifier"; // Your application's session ID
+```
+
 ## Usage
 
 ```typescript
 import { useCamera, CameraState } from "@poscam/use-camera";
 
-function CameraComponent({ sessionId }: { sessionId: string }) {
+function CameraComponent({ sessionId, authToken }: { sessionId: string, authToken: string }) {
   const {
     cameraState,
     qrCodeURL,
     imageURLs,
+    lastImageURL,
     isLoading,
     error,
     initialize,
     disconnect,
     retry,
     takePicture,
-  } = useCamera(sessionId, {
+  } = useCamera({
+    sessionId,
+    authToken,
     host: "your-app.com",
     useHttps: true,
   });
@@ -46,6 +59,7 @@ function CameraComponent({ sessionId }: { sessionId: string }) {
     <div>
       <p>Status: {cameraState}</p>
       {qrCodeURL && <img src={qrCodeURL} alt="QR Code" />}
+      {lastImageURL && <img src={lastImageURL} alt="Latest capture" />}
       {imageURLs.map((url, index) => (
         <img key={index} src={url} alt={`Captured ${index + 1}`} />
       ))}
@@ -61,19 +75,16 @@ function CameraComponent({ sessionId }: { sessionId: string }) {
 
 ## API
 
-### `useCamera(sessionId, config?)`
+### `useCamera(options)`
 
 #### Parameters
 
-- `sessionId: string` - Unique session identifier
-- `config?: CameraHookConfig` - Optional configuration
-
-#### Configuration Options
-
 ```typescript
-interface CameraHookConfig {
-  host?: string; // Default: "poscam.shop"
-  useHttps?: boolean; // Default: true
+interface UseCameraOptions {
+  sessionId: string;       // Unique session identifier
+  authToken: string;       // API authentication token
+  host?: string;           // Default: "poscam.shop"
+  useHttps?: boolean;      // Default: true
 }
 ```
 
@@ -84,6 +95,7 @@ interface UseCameraReturn {
   cameraState: CameraState;
   qrCodeURL: string;
   imageURLs: string[];
+  lastImageURL: string | undefined;
   isLoading: boolean;
   error: string | null;
   initialize: () => Promise<void>;
@@ -124,7 +136,10 @@ Triggers a picture capture command that is broadcast to all connected camera dev
 
 **Usage Example:**
 ```typescript
-const { takePicture, cameraState } = useCamera(sessionId);
+const { takePicture, cameraState } = useCamera({
+  sessionId: "your-session-id",
+  authToken: "your-api-token"
+});
 
 // Check if camera is connected before taking picture
 if (cameraState === CameraState.CONNECTED) {
