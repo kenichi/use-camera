@@ -15,6 +15,7 @@ export interface CreateCameraResponse {
 export interface CameraHookConfig {
   host?: string;
   useHttps?: boolean;
+  authToken: string;
 }
 
 export interface UseCameraReturn {

@@ -9,9 +9,9 @@ import {
 
 export function useCamera(
   sessionId: string,
-  config: CameraHookConfig = {},
+  config: CameraHookConfig,
 ): UseCameraReturn {
-  const { host = "poscam.shop", useHttps = true } = config;
+  const { host = "poscam.shop", useHttps = true, authToken } = config;
   const httpProtocol = useHttps ? "https" : "http";
   const wsProtocol = useHttps ? "wss" : "ws";
 
@@ -32,7 +32,10 @@ export function useCamera(
   const fetchCamera = useCallback(async (): Promise<CreateCameraResponse> => {
     const response = await fetch(`${httpProtocol}://${host}/api/cameras`, {
       body: JSON.stringify({ session_id: sessionId }),
-      headers: { "content-type": "application/json" },
+      headers: { 
+        "content-type": "application/json",
+        "authorization": `Bearer ${authToken}`
+      },
       method: "POST",
     });
 
@@ -41,7 +44,7 @@ export function useCamera(
     }
 
     return response.json();
-  }, [sessionId, host, httpProtocol]);
+  }, [sessionId, host, httpProtocol, authToken]);
 
   const initSocket = useCallback(
     async (code: string): Promise<void> => {
