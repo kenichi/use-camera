@@ -2,6 +2,6 @@ export { useCamera } from "./useCamera";
 export {
   CameraState,
   type CreateCameraResponse,
-  type CameraHookConfig,
+  type UseCameraOptions,
   type UseCameraReturn,
 } from "./types";

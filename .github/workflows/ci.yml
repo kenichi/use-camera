@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  jest-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+
+      - uses: actions/cache@v4
+        id: cache-node-modules
+        with:
+          path: assets/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles(format('{0}{1}', github.workspace, '/assets/package-lock.json')) }}
+
+      - name: node modules
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: tests
+        run: npm test

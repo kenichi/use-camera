@@ -12,7 +12,9 @@ export interface CreateCameraResponse {
   };
 }
 
-export interface CameraHookConfig {
+export interface UseCameraOptions {
+  sessionId: string;
+  authToken: string;
   host?: string;
   useHttps?: boolean;
 }
