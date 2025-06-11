@@ -1,6 +1,6 @@
 {
   "name": "@poscam/use-camera",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "React hook for camera functionality with Phoenix WebSocket integration",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
