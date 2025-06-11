@@ -2,6 +2,8 @@ export enum CameraState {
   WAITING = "waiting",
   CONNECTED = "connected",
   CLOSED = "closed",
+  LOADING = "loading",
+  ERROR = "error",
 }
 
 export interface CreateCameraResponse {
@@ -22,9 +24,7 @@ export interface UseCameraOptions {
 export interface UseCameraReturn {
   cameraState: CameraState;
   qrCodeURL: string;
-  imageURLs: string[];
   lastImageURL: string | undefined;
-  isLoading: boolean;
   error: string | null;
   initialize: () => Promise<void>;
   disconnect: () => void;

@@ -16,11 +16,9 @@ export function useCamera(options: UseCameraOptions): UseCameraReturn {
     CameraState.WAITING,
   );
   const [qrCodeURL, setQrCodeURL] = useState("");
-  const [imageURLs, setImageURLs] = useState<string[]>([]);
   const [lastImageURL, setLastImageURL] = useState<string | undefined>(
     undefined,
   );
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
@@ -57,12 +55,12 @@ export function useCamera(options: UseCameraOptions): UseCameraReturn {
         .receive("ok", (_resp) => {
           channel.on("state", (payload) => setCameraState(payload.state));
           channel.on("image_url", (payload) => {
-            setImageURLs((prev) => [...prev, payload.url]);
             setLastImageURL(payload.url);
           });
         })
         .receive("error", (resp) => {
           console.error("channel error:", resp);
+          setCameraState(CameraState.ERROR);
           setError(`Channel error: ${resp.reason || "Unknown error"}`);
         });
 
@@ -75,9 +73,8 @@ export function useCamera(options: UseCameraOptions): UseCameraReturn {
   const initialize = useCallback(async (): Promise<void> => {
     if (!sessionId) return;
 
-    setIsLoading(true);
+    setCameraState(CameraState.LOADING);
     setError(null);
-    setImageURLs([]);
     setLastImageURL(undefined);
 
     try {
@@ -87,9 +84,8 @@ export function useCamera(options: UseCameraOptions): UseCameraReturn {
 
       await initSocket(response.camera.code);
     } catch (err) {
+      setCameraState(CameraState.ERROR);
       setError(err instanceof Error ? err.message : "Unknown error occurred");
-    } finally {
-      setIsLoading(false);
     }
   }, [sessionId, fetchCamera, initSocket]);
 
@@ -123,9 +119,7 @@ export function useCamera(options: UseCameraOptions): UseCameraReturn {
   return {
     cameraState,
     qrCodeURL,
-    imageURLs,
     lastImageURL,
-    isLoading,
     error,
     initialize,
     disconnect,

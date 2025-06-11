@@ -70,9 +70,7 @@ describe("useCamera", () => {
 
     expect(result.current.cameraState).toBe(CameraState.WAITING);
     expect(result.current.qrCodeURL).toBe("");
-    expect(result.current.imageURLs).toEqual([]);
     expect(result.current.lastImageURL).toBe(undefined);
-    expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBe(null);
     expect(typeof result.current.initialize).toBe("function");
     expect(typeof result.current.disconnect).toBe("function");
@@ -111,7 +109,6 @@ describe("useCamera", () => {
       },
     );
 
-    expect(result.current.isLoading).toBe(false);
     expect(result.current.qrCodeURL).toBe(
       "http://localhost:4000/images/qr/ABC123.png",
     );
@@ -174,7 +171,7 @@ describe("useCamera", () => {
       await result.current.initialize();
     });
 
-    expect(result.current.isLoading).toBe(false);
+    expect(result.current.cameraState).toBe(CameraState.ERROR);
     expect(result.current.error).toBe("Failed to fetch camera: Not Found");
   });
 
@@ -187,7 +184,7 @@ describe("useCamera", () => {
       await result.current.initialize();
     });
 
-    expect(result.current.isLoading).toBe(false);
+    expect(result.current.cameraState).toBe(CameraState.ERROR);
     expect(result.current.error).toBe("Network error");
   });
 
@@ -276,7 +273,7 @@ describe("useCamera", () => {
     expect(window.fetch).not.toHaveBeenCalled();
   });
 
-  it("should accumulate imageURLs when multiple image_url events are received", async () => {
+  it("should update lastImageURL when multiple image_url events are received", async () => {
     const mockResponse = {
       camera: {
         code: "ABC123",
@@ -296,7 +293,7 @@ describe("useCamera", () => {
       await result.current.initialize();
     });
 
-    expect(result.current.imageURLs).toEqual([]);
+    expect(result.current.lastImageURL).toBe(undefined);
 
     // Simulate multiple image_url events
     const imageUrlCallback = mockChannel.on.mock.calls.find(
@@ -307,21 +304,20 @@ describe("useCamera", () => {
       imageUrlCallback?.({ url: "http://example.com/image1.jpg" });
     });
 
-    expect(result.current.imageURLs).toEqual([
+    expect(result.current.lastImageURL).toBe(
       "http://example.com/image1.jpg",
-    ]);
+    );
 
     act(() => {
       imageUrlCallback?.({ url: "http://example.com/image2.jpg" });
     });
 
-    expect(result.current.imageURLs).toEqual([
-      "http://example.com/image1.jpg",
+    expect(result.current.lastImageURL).toBe(
       "http://example.com/image2.jpg",
-    ]);
+    );
   });
 
-  it("should clear imageURLs and lastImageURL on initialize for new session", async () => {
+  it("should clear lastImageURL on initialize for new session", async () => {
     const mockResponse = {
       camera: {
         code: "ABC123",
@@ -351,17 +347,15 @@ describe("useCamera", () => {
       imageUrlCallback?.({ url: "http://example.com/image2.jpg" });
     });
 
-    expect(result.current.imageURLs).toHaveLength(2);
     expect(result.current.lastImageURL).toBe(
       "http://example.com/image2.jpg",
     );
 
-    // Re-initialize (new session) - this should clear both
+    // Re-initialize (new session) - this should clear lastImageURL
     await act(async () => {
       await result.current.initialize();
     });
 
-    expect(result.current.imageURLs).toEqual([]);
     expect(result.current.lastImageURL).toBe(undefined);
   });
 
@@ -529,8 +523,7 @@ describe("useCamera", () => {
       "http://example.com/image2.jpg",
     );
     
-    // Verify imageURLs still contains both
-    expect(result.current.imageURLs).toHaveLength(2);
+    // lastImageURL should be updated to the most recent
   });
 
   it("should reset lastImageURL to undefined when reinitializing", async () => {
@@ -574,7 +567,7 @@ describe("useCamera", () => {
     expect(result.current.lastImageURL).toBe(undefined);
   });
 
-  it("should NOT clear imageURLs and lastImageURL when camera state changes to CLOSED", async () => {
+  it("should NOT clear lastImageURL when camera state changes to CLOSED", async () => {
     const mockResponse = {
       camera: {
         code: "ABC123",
@@ -604,7 +597,6 @@ describe("useCamera", () => {
       imageUrlCallback?.({ url: "http://example.com/image2.jpg" });
     });
 
-    expect(result.current.imageURLs).toHaveLength(2);
     expect(result.current.lastImageURL).toBe(
       "http://example.com/image2.jpg",
     );
@@ -618,8 +610,7 @@ describe("useCamera", () => {
       stateCallback?.({ state: CameraState.CLOSED });
     });
 
-    // Should NOT clear imageURLs and lastImageURL on close
-    expect(result.current.imageURLs).toHaveLength(2);
+    // Should NOT clear lastImageURL on close
     expect(result.current.lastImageURL).toBe(
       "http://example.com/image2.jpg",
     );
