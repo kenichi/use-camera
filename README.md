@@ -1,5 +1,7 @@
 # @poscam/use-camera
 
+[![CI](https://github.com/kenichi/use-camera/actions/workflows/ci.yml/badge.svg)](https://github.com/kenichi/use-camera/actions/workflows/ci.yml)
+
 A React hook for camera functionality with Phoenix WebSocket integration.
 
 ## Installation
@@ -32,9 +34,7 @@ function CameraComponent({ sessionId, authToken }: { sessionId: string, authToke
   const {
     cameraState,
     qrCodeURL,
-    imageURLs,
     lastImageURL,
-    isLoading,
     error,
     initialize,
     disconnect,
@@ -52,17 +52,14 @@ function CameraComponent({ sessionId, authToken }: { sessionId: string, authToke
     initialize();
   }, [initialize]);
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (cameraState === CameraState.LOADING) return <div>Loading...</div>;
+  if (cameraState === CameraState.ERROR) return <div>Error: {error}</div>;
 
   return (
     <div>
       <p>Status: {cameraState}</p>
       {qrCodeURL && <img src={qrCodeURL} alt="QR Code" />}
       {lastImageURL && <img src={lastImageURL} alt="Latest capture" />}
-      {imageURLs.map((url, index) => (
-        <img key={index} src={url} alt={`Captured ${index + 1}`} />
-      ))}
       <button onClick={retry}>Retry</button>
       <button onClick={disconnect}>Disconnect</button>
       {cameraState === CameraState.CONNECTED && (
@@ -94,9 +91,7 @@ interface UseCameraOptions {
 interface UseCameraReturn {
   cameraState: CameraState;
   qrCodeURL: string;
-  imageURLs: string[];
   lastImageURL: string | undefined;
-  isLoading: boolean;
   error: string | null;
   initialize: () => Promise<void>;
   disconnect: () => void;
@@ -109,22 +104,34 @@ interface UseCameraReturn {
 
 ```typescript
 enum CameraState {
-  WAITING = "waiting",
-  CONNECTED = "connected",
-  CLOSED = "closed",
+  WAITING = "waiting",     // Waiting for camera connection
+  CONNECTED = "connected", // Camera is connected and ready
+  CLOSED = "closed",       // Camera session has been closed
+  LOADING = "loading",     // Initializing camera session
+  ERROR = "error",         // An error occurred
 }
 ```
+
+**State Flow:**
+- `LOADING` → `WAITING` → `CONNECTED` → `CLOSED` (normal flow)
+- `LOADING` → `ERROR` (on initialization failure)
+- Any state → `ERROR` (on WebSocket errors)
+
+**State Management:**
+- Loading state is managed through `CameraState.LOADING` instead of a separate `isLoading` boolean
+- Error state is managed through `CameraState.ERROR` with error details available in the `error` property
+- Only the most recent image URL is maintained (`lastImageURL`), not a full history
 
 ### Functions
 
 #### `initialize()`
-Initializes the camera session and WebSocket connection. Creates a new camera with QR code and establishes real-time communication.
+Initializes the camera session and WebSocket connection. Creates a new camera with QR code and establishes real-time communication. Sets `cameraState` to `LOADING` during initialization, then to the server's state on success or `ERROR` on failure.
 
 #### `disconnect()`
 Manually disconnects the WebSocket connection and cleans up resources.
 
 #### `retry()`
-Disconnects and re-initializes the camera session. Useful for recovering from errors.
+Disconnects and re-initializes the camera session. Useful for recovering from errors. Clears any previous error state and attempts a fresh connection.
 
 #### `takePicture()`
 Triggers a picture capture command that is broadcast to all connected camera devices via WebSocket. This function:
