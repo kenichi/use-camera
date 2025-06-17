@@ -36,3 +36,11 @@ The hook follows a two-step initialization pattern:
 
 Camera states flow through: `WAITING` → `CONNECTED` → `CLOSED`
 The hook manages WebSocket lifecycle automatically, disconnecting when camera closes.
+
+### Image Data Structure
+
+The hook returns image data as a `CameraImage` object with:
+- `id: string` - Unique identifier for the image
+- `url: string` - URL to access the image
+
+Images are received via WebSocket `image_url` events with payload `{ id, url }` and stored as the `image` property in the hook's return value (replacing the previous `lastImageURL` string).
