@@ -28,13 +28,13 @@ const sessionId = "unique-session-identifier"; // Your application's session ID
 ## Usage
 
 ```typescript
-import { useCamera, CameraState } from "@poscam/use-camera";
+import { useCamera, CameraState, CameraImage } from "@poscam/use-camera";
 
 function CameraComponent({ sessionId, authToken }: { sessionId: string, authToken: string }) {
   const {
     cameraState,
     qrCodeURL,
-    lastImageURL,
+    image,
     error,
     initialize,
     disconnect,
@@ -59,7 +59,7 @@ function CameraComponent({ sessionId, authToken }: { sessionId: string, authToke
     <div>
       <p>Status: {cameraState}</p>
       {qrCodeURL && <img src={qrCodeURL} alt="QR Code" />}
-      {lastImageURL && <img src={lastImageURL} alt="Latest capture" />}
+      {image && <img src={image.url} alt="Latest capture" />}
       <button onClick={retry}>Retry</button>
       <button onClick={disconnect}>Disconnect</button>
       {cameraState === CameraState.CONNECTED && (
@@ -91,12 +91,21 @@ interface UseCameraOptions {
 interface UseCameraReturn {
   cameraState: CameraState;
   qrCodeURL: string;
-  lastImageURL: string | undefined;
+  image: CameraImage | undefined;
   error: string | null;
   initialize: () => Promise<void>;
   disconnect: () => void;
   retry: () => Promise<void>;
   takePicture: () => void;
+}
+```
+
+#### Image Structure
+
+```typescript
+interface CameraImage {
+  id: string;    // Unique identifier for the image
+  url: string;   // URL to access the image
 }
 ```
 
@@ -120,7 +129,8 @@ enum CameraState {
 **State Management:**
 - Loading state is managed through `CameraState.LOADING` instead of a separate `isLoading` boolean
 - Error state is managed through `CameraState.ERROR` with error details available in the `error` property
-- Only the most recent image URL is maintained (`lastImageURL`), not a full history
+- Only the most recent image is maintained (`image`), not a full history
+- Image data includes both an ID and URL for better tracking and management
 
 ### Functions
 

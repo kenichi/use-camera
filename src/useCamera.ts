@@ -5,6 +5,7 @@ import {
   CreateCameraResponse,
   UseCameraOptions,
   UseCameraReturn,
+  CameraImage,
 } from "./types";
 
 export function useCamera(options: UseCameraOptions): UseCameraReturn {
@@ -16,7 +17,7 @@ export function useCamera(options: UseCameraOptions): UseCameraReturn {
     CameraState.WAITING,
   );
   const [qrCodeURL, setQrCodeURL] = useState("");
-  const [lastImageURL, setLastImageURL] = useState<string | undefined>(
+  const [image, setImage] = useState<CameraImage | undefined>(
     undefined,
   );
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +56,7 @@ export function useCamera(options: UseCameraOptions): UseCameraReturn {
         .receive("ok", (_resp) => {
           channel.on("state", (payload) => setCameraState(payload.state));
           channel.on("image_url", (payload) => {
-            setLastImageURL(payload.url);
+            setImage({ id: payload.id, url: payload.url });
           });
         })
         .receive("error", (resp) => {
@@ -75,7 +76,7 @@ export function useCamera(options: UseCameraOptions): UseCameraReturn {
 
     setCameraState(CameraState.LOADING);
     setError(null);
-    setLastImageURL(undefined);
+    setImage(undefined);
 
     try {
       const response = await fetchCamera();
@@ -119,7 +120,7 @@ export function useCamera(options: UseCameraOptions): UseCameraReturn {
   return {
     cameraState,
     qrCodeURL,
-    lastImageURL,
+    image,
     error,
     initialize,
     disconnect,

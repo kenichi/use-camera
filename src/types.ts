@@ -21,10 +21,15 @@ export interface UseCameraOptions {
   useHttps?: boolean;
 }
 
+export interface CameraImage {
+  id: string;
+  url: string;
+}
+
 export interface UseCameraReturn {
   cameraState: CameraState;
   qrCodeURL: string;
-  lastImageURL: string | undefined;
+  image: CameraImage | undefined;
   error: string | null;
   initialize: () => Promise<void>;
   disconnect: () => void;
