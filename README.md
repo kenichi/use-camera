@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/kenichi/use-camera/actions/workflows/ci.yml/badge.svg)](https://github.com/kenichi/use-camera/actions/workflows/ci.yml)
 
-A React hook for camera functionality with Phoenix WebSocket integration.
+A React hook for camera functionality for use with [PosCam](https://poscam.shop). This hook provides everything a developer needs to integrate remote camera capabilities into a react (or even react native) application. Originally built for use with Shopify POS UI Extensions, `useCamera` aims to be easy to use in any application!
 
 ## Installation
 
@@ -43,8 +43,6 @@ function CameraComponent({ sessionId, authToken }: { sessionId: string, authToke
   } = useCamera({
     sessionId,
     authToken,
-    host: "your-app.com",
-    useHttps: true,
   });
 
   // Initialize camera on mount
@@ -113,10 +111,10 @@ interface CameraImage {
 
 ```typescript
 enum CameraState {
+  LOADING = "loading",     // Initializing camera session
   WAITING = "waiting",     // Waiting for camera connection
   CONNECTED = "connected", // Camera is connected and ready
   CLOSED = "closed",       // Camera session has been closed
-  LOADING = "loading",     // Initializing camera session
   ERROR = "error",         // An error occurred
 }
 ```
@@ -125,12 +123,6 @@ enum CameraState {
 - `LOADING` → `WAITING` → `CONNECTED` → `CLOSED` (normal flow)
 - `LOADING` → `ERROR` (on initialization failure)
 - Any state → `ERROR` (on WebSocket errors)
-
-**State Management:**
-- Loading state is managed through `CameraState.LOADING` instead of a separate `isLoading` boolean
-- Error state is managed through `CameraState.ERROR` with error details available in the `error` property
-- Only the most recent image is maintained (`image`), not a full history
-- Image data includes both an ID and URL for better tracking and management
 
 ### Functions
 
@@ -147,9 +139,6 @@ Disconnects and re-initializes the camera session. Useful for recovering from er
 Triggers a picture capture command that is broadcast to all connected camera devices via WebSocket. This function:
 
 - Only works when `cameraState` is `CameraState.CONNECTED`
-- Sends a `'take_picture'` command through the WebSocket channel
-- The command is broadcast to all subscribed clients (camera interfaces)
-- Camera interfaces can listen for this command to trigger photo capture
 
 **Usage Example:**
 ```typescript
@@ -160,7 +149,7 @@ const { takePicture, cameraState } = useCamera({
 
 // Check if camera is connected before taking picture
 if (cameraState === CameraState.CONNECTED) {
-  takePicture(); // Broadcasts take picture command
+  takePicture();
 }
 ```
 
